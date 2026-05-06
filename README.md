@@ -1,4 +1,4 @@
-# <cr> Startpos Best Runs </c>
+# Startpos Best Runs
 
 Mod idea: [Danil Superskiy](https://www.youtube.com/@danil_superskiy)
 

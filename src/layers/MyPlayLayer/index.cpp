@@ -116,7 +116,7 @@ void MyPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     // log::info("[DESTROY PLAYER] Actual Progress: {}", actualProgress);
     
     if (!m_fields->currentRun.start.has_value())
-    return;
+        return;
     
     int start = m_fields->currentRun.start.value();
     int end = m_fields->currentRun.end;
@@ -135,10 +135,25 @@ void MyPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     int minProgress = m_fields->minProgress;
     
     if (!isBest || end - start < minProgress)
-    return;
+        return;
     
     saveRuns(this, levelID);
-    
+
+    bool autoRetry = GameManager::get()->getGameVariable("0026");
+
+    if (!autoRetry) {
+        return;
+    }
+
+    log::info("Retrying in some time....");
+    m_fields->waitingForDelay = true;
+    auto seq = CCSequence::create(
+        CCDelayTime::create(m_fields->animationDuration + 0.45f),
+        CCCallFunc::create(this, callfunc_selector(MyPlayLayer::delayedResetLevelReal)),
+        nullptr
+    );
+    runAction(seq);
+
     auto winSize = CCDirector::sharedDirector()->getWinSize();
     
     // CONTAINER
@@ -149,17 +164,7 @@ void MyPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     this->addChild(container, 9999);
     this->updateLayout();
     
-    bool autoRetry = GameManager::get()->getGameVariable("0026");
 
-    if (autoRetry) {
-        m_fields->waitingForDelay = true;
-        auto seq = CCSequence::create(
-            CCDelayTime::create(m_fields->animationDuration + 0.45f),
-            CCCallFunc::create(this, callfunc_selector(MyPlayLayer::delayedResetLevelReal)),
-            nullptr
-        );
-        runAction(seq);
-    }
     
     std::string text = fmt::format(
         fmt::runtime(m_fields->labelTemplate),
@@ -232,6 +237,13 @@ void MyPlayLayer::levelComplete() {
 }
 
 void MyPlayLayer::resetLevel() {
+
+    bool autoRetry = GameManager::get()->getGameVariable("0026");
+
+    if (!autoRetry) {
+        PlayLayer::resetLevel();
+        return;
+    }
     
     if (m_isPracticeMode && !m_fields->enableInPractice) {
         PlayLayer::resetLevel();
