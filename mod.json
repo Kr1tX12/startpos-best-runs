@@ -8,7 +8,7 @@
   },
   "id": "kr1t.startpos-best-runs",
   "name": "StartPos Best Runs",
-  "version": "v1.0.0",
+  "version": "v1.0.1",
   "developer": "kr1t",
   "description": "Shows your best runs from start positions",
   "dependencies": {
