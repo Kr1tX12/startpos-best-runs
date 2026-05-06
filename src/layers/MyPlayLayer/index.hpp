@@ -1,6 +1,6 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PlayLayer.hpp>
-#include "../../types/GovnoTypes.hpp"
+#include "../../types/types.hpp"
 
 using namespace geode::prelude;
 
@@ -13,7 +13,7 @@ class $modify(MyPlayLayer, PlayLayer) {
         int minProgress;
         std::string labelTemplate;
         float animationDuration;
-        std::filesystem::path soundPath;
+        bool enableInPractice;
         CCNode* activeBestNode;
 
         bool waitingForDelay;

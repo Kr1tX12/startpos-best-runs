@@ -3,6 +3,10 @@
 #include <matjson.hpp>
 
 
+std::filesystem::path getRunsPath(const std::string& levelID) {
+    return Mod::get()->getSaveDir() / ("runs_" + levelID + ".json");
+}
+
 std::string getLevelID(GJGameLevel* level) {
     int id = level->m_levelID.value();
 
@@ -14,7 +18,7 @@ std::string getLevelID(GJGameLevel* level) {
 }
 
 void loadRuns(MyPlayLayer* self, std::string levelID) {
-    auto path = Mod::get()->getSaveDir() / "runs.json";
+    auto path = getRunsPath(levelID);
 
     std::ifstream file(path);
     if (!file.good()) return;
@@ -25,13 +29,13 @@ void loadRuns(MyPlayLayer* self, std::string levelID) {
     auto parsed = matjson::parse(buffer.str());
     if (!parsed) return;
 
-    matjson::Value j = parsed.unwrap();
+    matjson::Value runs = parsed.unwrap();
 
-    if (!j.contains(levelID)) return;
+    if (!runs.isArray()) return;
 
-    auto arr = j[levelID];
 
-    for (auto& r : arr) {
+    self->m_fields->bestRuns.clear();
+    for (auto& r : runs) {
         Run run;
         run.start = r["start"].asDouble().unwrap();
         run.end = r["end"].asDouble().unwrap();
@@ -41,17 +45,7 @@ void loadRuns(MyPlayLayer* self, std::string levelID) {
 }
 
 void saveRuns(MyPlayLayer* self, std::string levelID) {
-    auto path = Mod::get()->getSaveDir() / "runs.json";
-
-    matjson::Value j = matjson::Value::object();
-
-    std::ifstream in(path);
-    if (in.good()) {
-        std::stringstream buffer;
-        buffer << in.rdbuf();
-        auto parsed = matjson::parse(buffer.str());
-        if (parsed) j = parsed.unwrap();
-    }
+    auto path = getRunsPath(levelID);
 
     matjson::Value arr = matjson::Value::array();
 
@@ -62,10 +56,8 @@ void saveRuns(MyPlayLayer* self, std::string levelID) {
         arr.push(obj);
     }
 
-    j[levelID] = arr;
-
     std::ofstream out(path);
-    out << j.dump(2);
+    out << arr.dump(2);
 }
 
 bool updateRun(int start, int end, std::vector<Run>& bestRuns) {
@@ -111,52 +103,44 @@ void MyPlayLayer::delayedResetLevelReal() {
 void MyPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     PlayLayer::destroyPlayer(player, object);
 
-    if (m_isPracticeMode) return;
+    if (m_isPracticeMode && !m_fields->enableInPractice) return;
+    if (m_isPlatformer) return;
     if (!player->m_isDead) return;
     if (!m_fields->m_hasRespawned) return;
     
     auto percent = this->getCurrentPercent();
-
+    
     float actualProgress = getActualProgress(this);
     m_fields->currentRun.end = actualProgress;
-
+    
     // log::info("[DESTROY PLAYER] Actual Progress: {}", actualProgress);
-
+    
     if (!m_fields->currentRun.start.has_value())
-        return;
-
+    return;
+    
     int start = m_fields->currentRun.start.value();
     int end = m_fields->currentRun.end;
-
-
+    
+    
     if (start < 1) return;
-
-
+    
+    
     auto levelID = getLevelID(m_level);
     
     auto& bestRuns = m_fields->bestRuns;
-
+    
     bool isBest = updateRun(start, end, bestRuns);
-
-    saveRuns(this, levelID);
-
+    
+    
     int minProgress = m_fields->minProgress;
-
+    
     if (!isBest || end - start < minProgress)
-        return;
-
-    if (isBest && end - start >= 30 && end > 90) {
-        FMOD::Sound* sound = nullptr; 
-        auto path = m_fields->soundPath.string();
-        std::replace(path.begin(), path.end(), '\\', '/'); 
-        FMODAudioEngine::sharedEngine()->m_system->createSound( path.c_str(), FMOD_DEFAULT, nullptr, &sound);
-        if (sound) { 
-            FMODAudioEngine::sharedEngine()->m_system->playSound( sound, nullptr, false, nullptr );
-        }
-    }
-
+    return;
+    
+    saveRuns(this, levelID);
+    
     auto winSize = CCDirector::sharedDirector()->getWinSize();
-
+    
     // CONTAINER
     auto container = CCNode::create();
     m_fields->activeBestNode = container;
@@ -164,16 +148,19 @@ void MyPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     container->setPosition(winSize / 2);
     this->addChild(container, 9999);
     this->updateLayout();
+    
+    bool autoRetry = GameManager::get()->getGameVariable("0026");
 
-
-    m_fields->waitingForDelay = true;
-    auto seq = CCSequence::create(
-        CCDelayTime::create(m_fields->animationDuration + 0.45f),
-        CCCallFunc::create(this, callfunc_selector(MyPlayLayer::delayedResetLevelReal)),
-        nullptr
-    );
-    runAction(seq);
-
+    if (autoRetry) {
+        m_fields->waitingForDelay = true;
+        auto seq = CCSequence::create(
+            CCDelayTime::create(m_fields->animationDuration + 0.45f),
+            CCCallFunc::create(this, callfunc_selector(MyPlayLayer::delayedResetLevelReal)),
+            nullptr
+        );
+        runAction(seq);
+    }
+    
     std::string text = fmt::format(
         fmt::runtime(m_fields->labelTemplate),
         fmt::arg("start", start),
@@ -224,8 +211,10 @@ void MyPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
 void MyPlayLayer::levelComplete() {
     PlayLayer::levelComplete();
 
-    if (!m_fields->currentRun.start.has_value() || m_isPracticeMode)
+    if (!m_fields->currentRun.start.has_value())
         return;
+
+    if (m_isPlatformer) return;
 
     int start = m_fields->currentRun.start.value();
     int end = 100;
@@ -237,16 +226,21 @@ void MyPlayLayer::levelComplete() {
     auto& bestRuns = m_fields->bestRuns;
 
     bool isBest = updateRun(start, end, bestRuns);
+    
 
     saveRuns(this, levelID);
 }
 
 void MyPlayLayer::resetLevel() {
-    if (m_isPracticeMode) {
+    
+    if (m_isPracticeMode && !m_fields->enableInPractice) {
         PlayLayer::resetLevel();
         return;
     }
-
+    if (m_isPlatformer) {
+        PlayLayer::resetLevel();
+        return;
+    };
 
     if (m_fields->waitingForDelay) {
         return;
@@ -270,11 +264,12 @@ void MyPlayLayer::resetLevel() {
 
 bool MyPlayLayer::init(GJGameLevel* level, bool useReplay, bool dontCreateObjects) {
     if (!PlayLayer::init(level, useReplay, dontCreateObjects)) return false;
+    if (m_isPlatformer) return true;
 
     m_fields->minProgress = Mod::get()->getSettingValue<int>("min-progress");
-    m_fields->labelTemplate = Mod::get()->getSettingValue<std::string>("label-template");
-    m_fields->animationDuration = Mod::get()->getSettingValue<float>("animation-duration");
-    m_fields->soundPath = Mod::get()->getSettingValue<std::filesystem::path>("sound");
+    m_fields->labelTemplate = Mod::get()->getSettingValue<std::string>("display-format");
+    m_fields->animationDuration = Mod::get()->getSettingValue<float>("popup-duration");
+    m_fields->enableInPractice = Mod::get()->getSettingValue<bool>("enable-in-practice");
     
     m_fields->bestRuns.clear();
     loadRuns(this, getLevelID(level));

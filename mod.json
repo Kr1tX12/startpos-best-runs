@@ -15,7 +15,10 @@
     "geode.node-ids": ">=v1.23.3"
   },
   "resources": {
-    "files": ["resources/sound.wav"]
+    "files": ["resources/example.png"]
+  },
+  "links": {
+    "source": "https://github.com/Kr1tX12/startpos-best-runs"
   },
   "tags": ["enhancement", "interface", "utility"],
   "settings": {
@@ -33,15 +36,15 @@
         "input": true
       }
     },
-    "label-template": {
+    "display-format": {
       "type": "string",
       "name": "Display format",
       "default": "{start}%-{end}%",
       "filter": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ{}"
     },
-    "animation-duration": {
+    "popup-duration": {
       "type": "float",
-      "name": "Animation duration in seconds",
+      "name": "\"NEW BEST\" popup duration (seconds)",
       "min": 0,
       "max": 5,
       "default": 0.6,
@@ -53,23 +56,10 @@
         "input": true
       }
     },
-    "sound": {
-      "type": "file",
-      "name": "New best sound",
-      "default": {
-        "win": "{mod_resources_dir}/sound.wav",
-        "mac": "{mod_resources_dir}/sound.wav",
-        "android": "{mod_resources_dir}/sound.wav"
-      },
-      "control": {
-        "dialog": "open",
-        "filters": [
-          {
-            "files": ["*.wav"],
-            "description": "Audio"
-          }
-        ]
-      }
+    "enable-in-practice": {
+      "type": "bool",
+      "name": "Enable in practice mode",
+      "default": false
     }
   }
 }
