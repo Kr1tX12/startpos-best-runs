@@ -37,8 +37,12 @@ void loadRuns(MyPlayLayer* self, std::string levelID) {
     self->m_fields->bestRuns.clear();
     for (auto& r : runs) {
         Run run;
-        run.start = r["start"].asDouble().unwrap();
-        run.end = r["end"].asDouble().unwrap();
+        if (auto s = r["start"].asDouble()) {
+            run.start = s.unwrap();
+        }
+        if (auto s = r["end"].asDouble()) {
+            run.end = s.unwrap();
+        }
 
         self->m_fields->bestRuns.push_back(run);
     }
@@ -107,8 +111,6 @@ void MyPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     if (m_isPlatformer) return;
     if (!player->m_isDead) return;
     if (!m_fields->m_hasRespawned) return;
-    
-    auto percent = this->getCurrentPercent();
     
     float actualProgress = getActualProgress(this);
     m_fields->currentRun.end = actualProgress;
@@ -255,9 +257,11 @@ void MyPlayLayer::resetLevel() {
 
     m_fields->m_hasRespawned = true;
 
-    if (m_fields->activeBestNode) {
-        m_fields->activeBestNode->stopAllActions();
-        m_fields->activeBestNode->removeFromParent();
+    if (auto node = m_fields->activeBestNode) {
+        if (node->getParent()) {
+            node->stopAllActions();
+            node->removeFromParent();
+        }
         m_fields->activeBestNode = nullptr;
     }
     
