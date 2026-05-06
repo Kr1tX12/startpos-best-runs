@@ -237,14 +237,7 @@ void MyPlayLayer::levelComplete() {
 }
 
 void MyPlayLayer::resetLevel() {
-
-    bool autoRetry = GameManager::get()->getGameVariable("0026");
-
-    if (!autoRetry) {
-        PlayLayer::resetLevel();
-        return;
-    }
-    
+   
     if (m_isPracticeMode && !m_fields->enableInPractice) {
         PlayLayer::resetLevel();
         return;
