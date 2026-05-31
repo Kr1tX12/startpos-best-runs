@@ -3,7 +3,7 @@
 void BestPauseLayer::customSetup() {
     PauseLayer::customSetup();
 
-    // if (PlayLayer::get()->m_level->isPlatformer()) return;
+    if (PlayLayer::get()->m_level->isPlatformer()) return;
 
     auto icon = CCSprite::create("icon.png"_spr);
     icon->setScale(0.28f);
