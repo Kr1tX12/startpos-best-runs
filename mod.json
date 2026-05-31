@@ -6,16 +6,17 @@
     "mac": "2.2081",
     "ios": "2.2081"
   },
-  "id": "kr1t.startpos-best-runs",
+  "id": "kr1txxx.startpos-best-runs",
   "name": "StartPos Best Runs",
   "version": "v1.0.2",
-  "developer": "kr1t",
+  "developer": "kr1txxx",
   "description": "Shows your best runs from start positions",
   "dependencies": {
-    "geode.node-ids": ">=v1.23.3"
+    "geode.node-ids": ">=v1.23.3",
+    "cvolton.level-id-api": ">=2.0.0"
   },
   "resources": {
-    "files": ["resources/example.png"]
+    "files": ["resources/*.png"]
   },
   "links": {
     "source": "https://github.com/Kr1tX12/startpos-best-runs"
@@ -25,7 +26,7 @@
     "min-progress": {
       "type": "int",
       "name": "Min run length",
-      "min": 1,
+      "min": 0,
       "max": 99,
       "default": 1,
       "control": {
@@ -39,18 +40,17 @@
     "display-format": {
       "type": "string",
       "name": "Display format",
-      "default": "{start}%-{end}%",
-      "filter": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ{}"
+      "default": "{start}%-{end}%"
     },
     "popup-duration": {
       "type": "float",
       "name": "\"NEW BEST\" popup duration (seconds)",
       "min": 0,
       "max": 5,
-      "default": 0.6,
+      "default": 0.5,
       "control": {
         "arrows": true,
-        "arrow-step": 1,
+        "arrow-step": 0.1,
         "slider": true,
         "slider-step": 0.1,
         "input": true
@@ -60,6 +60,16 @@
       "type": "bool",
       "name": "Enable in practice mode",
       "default": false
+    },
+    "show-decimals": {
+      "type": "bool",
+      "name": "Show decimals",
+      "default": false
+    },
+    "convert-new-best-popup": {
+      "type": "bool",
+      "name": "Use \"Gameplay ends at\" for \"NEW BEST\" popup",
+      "default": true
     }
   }
 }

@@ -1,22 +1,22 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 #include "../../types/types.hpp"
+#include "../../managers/RunsManager/index.hpp"
 
 using namespace geode::prelude;
 
-class $modify(MyPlayLayer, PlayLayer) {
+class $modify(BestPlayLayer, PlayLayer) {
     struct Fields {
         bool m_hasRespawned = true;
-        Run currentRun = Run();
-        std::vector<Run> bestRuns;
+        Run m_currentRun = Run();
+        int m_minProgress;
+        std::string m_labelTemplate;
+        float m_animationDuration;
+        bool m_enableInPractice;
+        bool m_convertNewBestPopup;
+        CCNode* m_activeBestNode;
 
-        int minProgress;
-        std::string labelTemplate;
-        float animationDuration;
-        bool enableInPractice;
-        CCNode* activeBestNode;
-
-        bool waitingForDelay;
+        bool m_waitingForDelay;
     };
     void destroyPlayer(PlayerObject* player, GameObject* object);
     void resetLevel();
@@ -24,4 +24,5 @@ class $modify(MyPlayLayer, PlayLayer) {
     bool init(GJGameLevel* level, bool useReplay, bool dontCreateObjects);
     void levelComplete();
     void delayedResetLevelReal();
+    void onQuit();
 };
