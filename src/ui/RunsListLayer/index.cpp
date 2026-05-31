@@ -201,7 +201,7 @@ void RunsListLayer::setRuns(RunsSort sort) {
         frame->setScale(1);
         
         auto editSprite = CCSprite::create("edit.png"_spr);
-        editSprite->setScale(0.014f);
+        editSprite->setScale(0.13f);
         editSprite->setPosition(frame->getContentSize() / 2);
         editSprite->setColor(ccColor3B(255, 255, 255));
         
