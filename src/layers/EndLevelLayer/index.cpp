@@ -14,6 +14,8 @@ void BestEndLevelLayer::customSetup() {
         menu_selector(BestEndLevelLayer::onClick)
     );
     
+    button->setID("best_runs_button"_spr);
+
     auto menu = this->getChildByID("hide-layer-menu");
     menu->addChild(button);
     menu->updateLayout();

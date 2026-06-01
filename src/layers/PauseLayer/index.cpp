@@ -13,6 +13,8 @@ void BestPauseLayer::customSetup() {
         this,
         menu_selector(BestPauseLayer::onClick)
     );
+
+    button->setID("best_runs_button"_spr);
     
     auto menu = this->getChildByID("left-button-menu");
     menu->addChild(button);

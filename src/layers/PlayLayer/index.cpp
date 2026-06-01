@@ -71,6 +71,7 @@ void BestPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     m_fields->m_activeBestNode = container;
     container->setScale(0);
     container->setPosition(winSize / 2);
+    container->setID("new-best-popup"_spr);
     this->addChild(container, 10);
     this->updateLayout();
 
