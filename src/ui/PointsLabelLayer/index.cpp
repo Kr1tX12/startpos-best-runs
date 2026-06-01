@@ -22,7 +22,7 @@ bool PointsLabelLayer::init() {
 
     if (points < 0 || std::isnan(points)) return true;
 
-    m_pointsLabel = CCLabelBMFont::create(std::format("{}% completed", points).c_str(), "bigFont.fnt");
+    m_pointsLabel = CCLabelBMFont::create(fmt::format("{}% completed", points).c_str(), "bigFont.fnt");
     m_pointsLabel->setColor(ccColor3B(115, 115, 115));
     m_pointsLabel->setAnchorPoint({ 0, 0 });
 
@@ -39,5 +39,5 @@ void PointsLabelLayer::updateLabel() {
 
     if (points < 0 || std::isnan(points)) return;
 
-    m_pointsLabel->setString(std::format("{}% completed", points).c_str());
+    m_pointsLabel->setString(fmt::format("{}% completed", points).c_str());
 }

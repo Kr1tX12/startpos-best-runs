@@ -10,7 +10,7 @@ bool LevelSettingsPopup::init(GJGameLevel* level, std::function<void()> onConfir
     m_levelID = Utils::getLevelID(level);
     m_onConfirmCallback = onConfirmCallback;
 
-    auto title = CCLabelBMFont::create(Utils::truncate(std::format("{} Settings", level->m_levelName), 16).c_str(), "bigFont.fnt");
+    auto title = CCLabelBMFont::create(Utils::truncate(fmt::format("{} Settings", level->m_levelName), 16).c_str(), "bigFont.fnt");
     title->setPosition({width / 2, height - 15});
     title->setScale(0.4f);
 

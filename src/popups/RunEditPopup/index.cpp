@@ -10,7 +10,7 @@ bool RunEditPopup::init(float from, std::function<void()> onConfirmCallback) {
     m_from = from;
     m_onConfirmCallback = onConfirmCallback;
     
-    auto title = CCLabelBMFont::create(std::format("Edit best run from {}%", from).c_str(), "bigFont.fnt");
+    auto title = CCLabelBMFont::create(fmt::format("Edit best run from {}%", from).c_str(), "bigFont.fnt");
     title->setPosition({width / 2, height - 35});
     title->setScale(0.45f);
     
@@ -60,7 +60,7 @@ void RunEditPopup::onConfirm(CCObject* sender) {
     inputValue = std::floor(inputValue * 100.0f) / 100.0f;
 
     if (inputValue < m_from || inputValue > 100) {
-        Notification::create(std::format("Enter number from {} to 100", m_from))->show();
+        Notification::create(fmt::format("Enter number from {} to 100", m_from))->show();
         return;
     }
 

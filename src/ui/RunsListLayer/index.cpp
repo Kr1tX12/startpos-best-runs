@@ -159,7 +159,7 @@ void RunsListLayer::setRuns(RunsSort sort) {
         }
 
         auto runLengthLabel = CCLabelBMFont::create(
-            std::format("{}% run", static_cast<int>(runLength)).c_str(),
+            fmt::format("{}% run", static_cast<int>(runLength)).c_str(),
             "bigFont.fnt"
         );
 
