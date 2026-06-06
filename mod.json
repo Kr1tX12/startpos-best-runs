@@ -6,7 +6,7 @@
     "mac": "2.2081",
     "ios": "2.2081"
   },
-  "id": "kr1txxx.startpos-best-runs",
+  "id": "kr1tx.startpos-best-runs",
   "name": "StartPos Best Runs",
   "version": "v1.0.1",
   "developer": "kr1txxx",
@@ -69,6 +69,16 @@
     "convert-new-best-popup": {
       "type": "bool",
       "name": "Use \"Gameplay ends at\" for \"NEW BEST\" popup",
+      "default": true
+    },
+    "ignore-noclip-runs": {
+      "type": "bool",
+      "name": "Don't save noclip runs",
+      "default": true
+    },
+    "ignore-speedhack-runs": {
+      "type": "bool",
+      "name": "Don't save speedhack runs",
       "default": true
     }
   }

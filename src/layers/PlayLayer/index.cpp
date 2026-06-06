@@ -3,6 +3,10 @@
 #include <matjson.hpp>
 #include "../../utils/index.hpp"
 
+void BestPlayLayer::onModify(auto& self) {
+    (void)self.setHookPriorityPre("PlayLayer::destroyPlayer", Priority::First);
+}
+
 float BestPlayLayer::getActualProgress(GJBaseGameLayer* game) {
     float percent;
     if (game->m_level->m_timestamp > 0) {
@@ -15,7 +19,6 @@ float BestPlayLayer::getActualProgress(GJBaseGameLayer* game) {
     return std::clamp(percent, 0.f, 100.f);
 }
 
-
 void BestPlayLayer::delayedResetLevelReal() {
     m_fields->m_waitingForDelay = false;
     this->delayedResetLevel();
@@ -24,9 +27,26 @@ void BestPlayLayer::delayedResetLevelReal() {
 void BestPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     PlayLayer::destroyPlayer(player, object);
 
+    if (!m_fields->m_lastDeathObject)
+        m_fields->m_lastDeathObject = object;
+
+
+    bool isFirstNoclipDeath = false;
+    if (
+        m_fields->m_ignoreNoclipRuns &&
+        !m_fields->m_noclipDetected &&
+        m_fields->m_lastDeathObject != object &&
+        !player->m_isDead &&
+        !m_levelEndAnimationStarted
+    ) {
+        // noclip detected
+        m_fields->m_noclipDetected = true;
+        isFirstNoclipDeath = true;
+    }
+
     if (m_isPracticeMode && !m_fields->m_enableInPractice) return;
     if (m_isPlatformer) return;
-    if (!player->m_isDead) return;
+    if (!player->m_isDead && !isFirstNoclipDeath) return;
     if (!m_fields->m_hasRespawned) return;
     
     float actualProgress = getActualProgress(this);
@@ -37,17 +57,24 @@ void BestPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     
     float start = m_fields->m_currentRun.start.value();
     float end = m_fields->m_currentRun.end;
+
+    if (m_fields->m_speedhackDetected) {
+        return;
+    }
+    if (m_fields->m_noclipDetected && !isFirstNoclipDeath) {
+        return;
+    }
     
     RunUpdateResult runUpdateResult = RunsManager::get().updateRun(start, end);
     
     int minProgress = m_fields->m_minProgress;
     
-    if (runUpdateResult == RunUpdateResult::NoChanges )
+    if (runUpdateResult == RunUpdateResult::NoChanges)
         return;
     
     RunsManager::get().saveRuns();
 
-    if (runUpdateResult == RunUpdateResult::Repeated || start == 0 || end - start < minProgress)
+    if (runUpdateResult == RunUpdateResult::Repeated || start == 0 || end - start < minProgress || isFirstNoclipDeath)
         return;
 
     bool autoRetry = GameManager::get()->getGameVariable("0026");
@@ -140,7 +167,9 @@ void BestPlayLayer::levelComplete() {
     float start = m_fields->m_currentRun.start.value();
     float end = 100.f;
 
-    if (start < 1) return;
+    if (m_fields->m_speedhackDetected || m_fields->m_noclipDetected) {
+        return;
+    }
 
     auto levelID = Utils::getLevelID(m_level);
     
@@ -149,20 +178,34 @@ void BestPlayLayer::levelComplete() {
 }
 
 void BestPlayLayer::resetLevel() {
-    if (m_isPracticeMode && !m_fields->m_enableInPractice) {
-        PlayLayer::resetLevel();
-        return;
-    }
     if (m_isPlatformer) {
         PlayLayer::resetLevel();
         return;
     };
+
+    if (m_isPracticeMode && !m_fields->m_enableInPractice) {
+        PlayLayer::resetLevel();
+        return;
+    }
 
     if (m_fields->m_waitingForDelay) {
         return;
     }
 
     PlayLayer::resetLevel();
+
+    m_fields->m_speedhackCompare = std::nullopt;
+
+    m_fields->m_realTimeHistory.clear();
+    m_fields->m_gameTimeHistory.clear();
+
+    m_fields->m_rollingRealSum = 0;
+    m_fields->m_rollingGameSum = 0;
+
+    m_fields->m_speedhackDetected = false;
+
+    m_fields->m_noclipDetected = false;
+    m_fields->m_lastDeathObject = nullptr;
 
     m_fields->m_hasRespawned = true;
 
@@ -188,6 +231,8 @@ bool BestPlayLayer::init(GJGameLevel* level, bool useReplay, bool dontCreateObje
     m_fields->m_animationDuration = Mod::get()->getSettingValue<float>("popup-duration");
     m_fields->m_enableInPractice = Mod::get()->getSettingValue<bool>("enable-in-practice");
     m_fields->m_convertNewBestPopup = Mod::get()->getSettingValue<bool>("convert-new-best-popup");
+    m_fields->m_ignoreNoclipRuns = Mod::get()->getSettingValue<bool>("ignore-noclip-runs");
+    m_fields->m_ignoreSpeedhackRuns= Mod::get()->getSettingValue<bool>("ignore-speedhack-runs");
 
     RunsManager::get().init(Utils::getLevelID(level));
     
@@ -198,4 +243,63 @@ void BestPlayLayer::onQuit() {
     PlayLayer::onQuit();
 
     RunsManager::get().clear();
+}
+
+
+void BestPlayLayer::checkDelta(float delta) {
+    if (!m_fields->m_ignoreSpeedhackRuns || m_player1->m_isDead || m_isPaused) return;
+
+    auto now = std::chrono::steady_clock::now();
+
+    if (!m_fields->m_speedhackCompare.has_value()) {
+        m_fields->m_speedhackCompare = now;
+        return;
+    }
+
+    std::chrono::duration<double> realElapsed = now - m_fields->m_speedhackCompare.value();
+    m_fields->m_speedhackCompare = now;
+
+    auto gameDt = static_cast<double>(delta);
+    auto realDt = realElapsed.count();
+
+    if (realDt > 0.2) return;
+
+    m_fields->m_rollingRealSum += realDt;
+    m_fields->m_rollingGameSum += gameDt;
+    m_fields->m_realTimeHistory.push_back(realDt);
+    m_fields->m_gameTimeHistory.push_back(gameDt);
+
+    size_t maxSamples = 120; 
+    if (m_fields->m_realTimeHistory.size() > maxSamples) {
+        m_fields->m_rollingRealSum -= m_fields->m_realTimeHistory.front();
+        m_fields->m_rollingGameSum -= m_fields->m_gameTimeHistory.front();
+        m_fields->m_realTimeHistory.pop_front();
+        m_fields->m_gameTimeHistory.pop_front();
+    }
+
+    if (m_fields->m_realTimeHistory.size() >= 30 && m_fields->m_rollingGameSum != 0) {
+        auto currentRatio = m_fields->m_rollingGameSum / m_fields->m_rollingRealSum;
+        auto expectedRatio = m_fields->m_currentTimeWarp;
+
+        // только замедление
+        if (currentRatio < expectedRatio - 0.05) {
+            // CHEATS!!!! SPEEDHACK DETECTED
+            m_fields->m_speedhackDetected = true;
+        }
+    }
+}
+
+void BestPlayLayer::postUpdate(float dt) {
+    checkDelta(dt);
+    PlayLayer::postUpdate(dt);
+}
+
+void BestPlayLayer::updateTimeWarp(float timeWarp) {
+    PlayLayer::updateTimeWarp(timeWarp);
+    m_fields->m_currentTimeWarp = timeWarp;
+
+    m_fields->m_realTimeHistory.clear();
+    m_fields->m_gameTimeHistory.clear();
+    m_fields->m_rollingRealSum = 0;
+    m_fields->m_rollingGameSum = 0;
 }
