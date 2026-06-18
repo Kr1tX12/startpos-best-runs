@@ -6,9 +6,9 @@
     "mac": "2.2081",
     "ios": "2.2081"
   },
-  "id": "kr1tx.startpos-best-runs",
+  "id": "krit.startpos-best-runs",
   "name": "StartPos Best Runs",
-  "version": "v1.1.0",
+  "version": "v1.2.0",
   "developer": "kr1txxx",
   "description": "Shows your best runs from start positions",
   "dependencies": {

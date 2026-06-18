@@ -19,10 +19,19 @@ bool PointsLabelLayer::init() {
     auto convertedRuns = Utils::convertRuns(levelJson.runs, levelJson.endsAt);
 
     float points = Utils::getLevelPoints(convertedRuns);
+    int levelCompletedRuns = Utils::getLevelCompletedRuns(convertedRuns);
 
     if (points < 0 || std::isnan(points)) return true;
 
-    m_pointsLabel = CCLabelBMFont::create(fmt::format("{}% completed", points).c_str(), "bigFont.fnt");
+    std::string labelText;
+
+    if (levelCompletedRuns != -1) {
+        labelText = fmt::format("{}% completed - {} runs", points, levelCompletedRuns);
+    } else {
+        labelText = fmt::format("{}% completed", points);
+    }
+ 
+    m_pointsLabel = CCLabelBMFont::create(labelText.c_str(), "bigFont.fnt");
     m_pointsLabel->setColor(ccColor3B(115, 115, 115));
     m_pointsLabel->setAnchorPoint({ 0, 0 });
 
@@ -36,8 +45,17 @@ void PointsLabelLayer::updateLabel() {
     auto convertedRuns = Utils::convertRuns(levelJson.runs, levelJson.endsAt);
 
     float points = Utils::getLevelPoints(convertedRuns);
+    int levelCompletedRuns = Utils::getLevelCompletedRuns(convertedRuns);
 
     if (points < 0 || std::isnan(points)) return;
 
-    m_pointsLabel->setString(fmt::format("{}% completed", points).c_str());
+    std::string labelText;
+
+    if (levelCompletedRuns != -1) {
+        labelText = fmt::format("{}% completed - {} runs", points, levelCompletedRuns);
+    } else {
+        labelText = fmt::format("{}% completed", points);
+    }
+
+    m_pointsLabel->setString(labelText.c_str());
 }

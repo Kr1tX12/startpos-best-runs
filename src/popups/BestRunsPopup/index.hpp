@@ -7,6 +7,7 @@
 #include "../../ui/SortButtonLayer/index.hpp"
 #include "../../ui/PointsLabelLayer/index.hpp"
 #include "../LevelSettingsPopup/index.hpp"
+#include "../CopyRunsPopup/index.hpp"
 
 using namespace geode::prelude;
 
@@ -14,6 +15,7 @@ class BestRunsPopup : public geode::Popup {
     private: 
         void onEditClick(float start);
         void onSettingsClick(CCObject* sender);
+        void onCopyClick(CCObject* sender);
 
         GJGameLevel* m_level;
         RunsListLayer* m_runsList;

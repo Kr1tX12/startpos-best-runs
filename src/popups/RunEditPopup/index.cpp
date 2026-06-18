@@ -12,7 +12,7 @@ bool RunEditPopup::init(float from, std::function<void()> onConfirmCallback) {
     
     auto title = CCLabelBMFont::create(fmt::format("Edit best run from {}%", from).c_str(), "bigFont.fnt");
     title->setPosition({width / 2, height - 35});
-    title->setScale(0.45f);
+    title->setScale(0.4f);
     
     m_textInput = TextInput::create(width - padding * 2, "New best run");
     m_textInput->setScale(0.7f);

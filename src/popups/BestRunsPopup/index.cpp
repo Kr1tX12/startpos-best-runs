@@ -14,6 +14,7 @@ bool BestRunsPopup::init(GJGameLevel* level) {
     title->setAnchorPoint({ 0, 0.5f });
     title->setScale(0.35f);
 
+
     auto settingsSprite = CCSprite::create("settings.png"_spr);
     settingsSprite->setScale(0.3f);
     settingsSprite->setColor(ccColor3B(100, 100, 100));
@@ -65,6 +66,26 @@ bool BestRunsPopup::init(GJGameLevel* level) {
 
     m_mainLayer->addChild(m_pointsLabel);
 
+
+
+    auto copyButtonFrame = CCSprite::createWithSpriteFrameName("GJ_plainBtn_001.png"); 
+    copyButtonFrame->setScale(0.6f);
+
+    auto copySprite = CCSprite::create("copy.png"_spr);
+    copySprite->setScale(0.15f);
+    copySprite->setPosition(copyButtonFrame->getContentSize() / 2);
+
+    copyButtonFrame->addChild(copySprite);
+    
+    auto copyButton = CCMenuItemSpriteExtra::create(copyButtonFrame, this, menu_selector(BestRunsPopup::onCopyClick));
+    // copyButton->setPosition({ width, -(copyButton->getContentHeight() / 2) });
+    
+    auto copyMenu = CCMenu::create();
+    copyMenu->setPosition({ width, 0 });
+    copyMenu->addChild(copyButton);
+
+    m_mainLayer->addChild(copyMenu);
+
     return true;
 }
 
@@ -93,4 +114,8 @@ void BestRunsPopup::reloadRuns() {
 
 void BestRunsPopup::onSettingsClick(CCObject* sender) {
     LevelSettingsPopup::create(m_level, [this]() { this->reloadRuns(); })->show();
+}
+
+void BestRunsPopup::onCopyClick(CCObject* sender) {
+    CopyRunsPopup::create()->show();
 }

@@ -53,7 +53,7 @@ std::vector<ConvertedRunJson> Utils::convertRuns(const std::vector<RunJson>& run
     return result;
 }
 
-std::string trim(const std::string& s) {
+std::string Utils::trim(const std::string& s) {
     auto notSpace = [](unsigned char c) {
         return std::isspace(c);
     };
@@ -78,4 +78,40 @@ std::string Utils::truncate(const std::string& str, size_t maxLen = 10) {
 float Utils::roundProgressValue(float progress, bool showDecimals) {
     if (!showDecimals) return std::floor(progress);
     return std::round(progress * 100.0f) / 100.0f;
+}
+
+int Utils::getLevelCompletedRuns(const std::vector<ConvertedRunJson>& runs)
+{
+    constexpr float EPS = 1e-4f;
+
+    auto sortedRuns = runs;
+
+    std::sort(sortedRuns.begin(), sortedRuns.end(),
+        [](const ConvertedRunJson& a, const ConvertedRunJson& b)
+        {
+            return a.convertedStart < b.convertedStart;
+        });
+
+    float covered = 0.0f;
+    int count = 0;
+    size_t i = 0;
+
+    while (covered < 100.0f - EPS)
+    {
+        float bestReach = covered;
+
+        while (i < sortedRuns.size() && sortedRuns[i].convertedStart <= covered + EPS)
+        {
+            bestReach = std::max(bestReach, sortedRuns[i].convertedEnd);
+            ++i;
+        }
+
+        if (bestReach <= covered + EPS)
+            return -1;
+
+        covered = bestReach;
+        ++count;
+    }
+
+    return count;
 }

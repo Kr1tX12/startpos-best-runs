@@ -14,5 +14,7 @@ namespace Utils {
     std::string truncate(const std::string& str, size_t maxLen);
     ConvertedRunJson convertRun(const RunJson& run, float gameplayEndsAt);
     std::vector<ConvertedRunJson> convertRuns(const std::vector<RunJson>& runs, float gameplayEndsAt);
+    int getLevelCompletedRuns(const std::vector<ConvertedRunJson>& runs);
+    std::string trim(const std::string& s);
     float roundProgressValue(float progress, bool showDecimals = true);
 }
